@@ -3,6 +3,7 @@ package handlers
 import (
 	"bookstoreGo/internals/models"
 	"bookstoreGo/internals/repositories"
+	"bookstoreGo/pkg"
 	"log"
 	"net/http"
 
@@ -68,4 +69,55 @@ func (a *AuthHandler) Register(ctx *gin.Context) {
 		"message": "success registered",
 	})
 }
-func (a *AuthHandler) Login(ctx *gin.Context) {}
+func (a *AuthHandler) Login(ctx *gin.Context) {
+	body := models.AuthModel{} //kurung kurawal berarti inisialisasi
+	if err := ctx.ShouldBind(&body); err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	result, err := a.FindByEmail(body)
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if len(result) == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Email is not registered",
+		})
+		return
+	}
+	match, err := argon2id.ComparePasswordAndHash(body.Password, result[0].Password)
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if !match {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Bad Credentials",
+		})
+		return
+	}
+
+	payload := pkg.NewPayload(body.Email)
+	token, err := payload.CreateToken()
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "login success",
+		"token":   token,
+	})
+}
