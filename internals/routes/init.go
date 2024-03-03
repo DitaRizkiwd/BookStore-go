@@ -13,6 +13,6 @@ func InitRouter(db *sqlx.DB) *gin.Engine {
 		ctx.String(http.StatusOK, "hello world")
 	})
 	InitAuthRouter(router, db)
-
+	InitBookRouter(router, db)
 	return router
 }

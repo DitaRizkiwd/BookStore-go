@@ -31,7 +31,7 @@ func (p *Payload) CreateToken() (string, error) {
 	return result, nil
 
 }
-func (p *Payload) VerifyToken(token string) (*Payload, error) {
+func VerifyToken(token string) (*Payload, error) {
 	jwtSecret := os.Getenv("JWT_SECRET")
 	parsedToken, err := jwt.ParseWithClaims(token, &Payload{}, func(t *jwt.Token) (interface{}, error) {
 		//ambil jwt secret
